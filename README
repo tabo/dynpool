@@ -1,0 +1,10 @@
+dynpool
+=======
+
+dynpool is a Python library that handles the growing and shrinking of
+a pool of resources depending on usage patterns.
+
+You can find the documentation in
+
+    https://tabo.pe/projects/dynpool/docs/tip/
+

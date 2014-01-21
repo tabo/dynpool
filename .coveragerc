@@ -1,0 +1,16 @@
+[run]
+branch = True
+source = dynpool
+parallel = True
+
+[paths]
+source =
+  ./
+  *\workspace\dynpool\tox_python\*\os\windows\
+  */jobs/dynpool/dynpool/TOX_PYTHON/*/os/osx/
+  */workspace/dynpool/TOX_PYTHON/*/os/linux/
+
+[report]
+omit =
+    */test/*
+precision = 2
