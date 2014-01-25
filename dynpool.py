@@ -40,7 +40,7 @@ object, and for that, the pool must follow an interface:
 
    .. py:attribute:: max
 
-      The minimum number of resources that should be in the pool.
+      The maximum number of resources that should be in the pool.
       ``dynpool`` won't grow the pool beyond this point, and will
       try to :py:meth:`shrink` it as soon as resources are freed.
 
