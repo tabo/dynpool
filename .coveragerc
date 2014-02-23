@@ -7,7 +7,7 @@ parallel = True
 source =
   ./
   *\workspace\dynpool\tox_python\*\os\windows\
-  */jobs/dynpool/dynpool/TOX_PYTHON/*/os/osx/
+  */jobs/dynpool/workspace/TOX_PYTHON/*/os/osx/
   */workspace/dynpool/TOX_PYTHON/*/os/linux/
 
 [report]
