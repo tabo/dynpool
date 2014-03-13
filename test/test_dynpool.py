@@ -59,6 +59,14 @@ def test_more_idle_threads_than_maxspare_shrinks_half():
     assert resizer.shrink_value == 15
 
 
+def test_dont_shrink_when_idle_more_than_maxspare_but_blocked_by_min():
+    pool = Mock(min=20, max=40, size=20, idle=20, qsize=0)
+    resizer = DynamicPoolResizer(pool, minspare=10, maxspare=40)
+    assert resizer.grow_value == 0
+    assert resizer.shrink_value == 0
+
+
+
 def test_normal_thread_counts_without_changes():
     pool = Mock(min=5, max=30, size=20, idle=5, qsize=0)
     resizer = DynamicPoolResizer(pool, minspare=5, maxspare=10)

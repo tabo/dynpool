@@ -172,7 +172,10 @@ class DynamicPoolResizer(object):
         pool_idle = pool.idle
         pool_qsize = pool.qsize
         minspare = self.minspare
-        if pool_size > pool_min and pool_size == pool_idle and not pool_qsize:
+        if pool_size <= pool_min:
+            # Never shrink below the min value
+            shrinkby = 0
+        elif pool_size == pool_idle and not pool_qsize:
             # It's oh so quiet...
             # All the threads are idle and there are no incoming requests.
             # We go down to our initial threadpool size.
