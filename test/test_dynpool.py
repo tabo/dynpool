@@ -27,6 +27,15 @@ def test_no_idle_threads_and_waiting_conns_grows_maxspare():
     assert resizer.shrink_value == 0
 
 
+def test_no_idle_threads_and_waiting_conns_grows_maxspare_respecting_max():
+    maxspare = 40
+    pool = Mock(min=20, max=40, size=21, idle=0, qsize=4)
+    resizer = DynamicPoolResizer(pool, minspare=10, maxspare=maxspare)
+    grow_value = resizer.grow_value
+    assert grow_value == 19
+    assert resizer.shrink_value == 0
+
+
 def test_less_idle_threads_than_minspare_grows():
     idle = 2
     minspare = 5

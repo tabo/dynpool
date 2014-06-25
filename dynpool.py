@@ -151,7 +151,10 @@ class DynamicPoolResizer(object):
             # queue. This means that we just received a lot of requests that we
             # couldn't handle with our usual minspare threads value, so to
             # avoid more problems, quickly grow the pool by the maxspare value.
-            growby = maxspare
+            if 0 < pool_max < pool_size + maxspare:
+                growby = pool_max - pool_size
+            else:
+                growby = maxspare
         else:
             growby = max(0, pool_min - pool_size, self.minspare - pool_idle)
         return growby
