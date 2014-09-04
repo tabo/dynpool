@@ -186,11 +186,15 @@ class DynamicPoolResizer(object):
         elif pool_idle > self.maxspare:
             # Leave only maxspare idle threads ready to accept connections.
             shrinkby = pool_idle - self.maxspare
-        elif pool_idle > minspare and not pool_qsize:
+        elif pool_idle > minspare + 1 and not pool_qsize:
             # We have more than minspare threads idling, but no incoming
             # connections to handle. Slowly shrink the thread pool by half
             # every time the Thread monitor runs (as long as there are no
             # incoming connections).
+            #
+            # But make sure that we have one more thread than
+            # minspare to prevent creating another thread as soon as
+            # a request comes in.
             shrinkby = int(math.ceil((pool_idle - minspare) / 2.0))
         else:
             shrinkby = 0

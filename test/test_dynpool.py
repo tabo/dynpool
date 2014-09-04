@@ -178,6 +178,17 @@ def test_cannot_shrink_before_shrinkfreq():
     resizer.lastshrink -= (shrinkfreq - 1)
     assert resizer.can_shrink() is False
 
+# If we have one more thread than minspare, then avoid shrinking.
+#
+# Otherwise, as soon as a request comes in and is allocated to a thread,
+# we will have to create a new thread to satisfy the "minspare"
+# requirement. It makes more sense to have a spare thread hanging
+# around, rather than having a thread fluttering in and out of
+# existence.
+def test_no_spare_fluttering_thread():
+    pool = Mock(min=1, max=30, size=4, idle=3, qsize=0)
+    resizer = DynamicPoolResizer(pool, minspare=2, maxspare=10)
+    assert resizer.shrink_value == 0
 
 @patch.multiple('dynpool.DynamicPoolResizer',
                 grow_value=3, shrink_value=0,
