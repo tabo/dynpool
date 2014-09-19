@@ -15,7 +15,7 @@ def test_no_threads_and_waiting_conns_grows_enough():
     maxspare = 10
     pool = Mock(min=5, max=30, size=0, idle=0, qsize=4)
     resizer = DynamicPoolResizer(pool, minspare=5, maxspare=maxspare)
-    
+
     # We need to have grown enough threads so that we:
     #  - Have enough to satisfy as many requests in the queue
     #  - Have enough spare threads (between min and max spare).
@@ -39,7 +39,7 @@ def test_no_idle_threads_and_waiting_conns_grows_enough_respecting_max():
     maxspare = 40
     pool = Mock(min=20, max=40, size=21, idle=0, qsize=4)
     resizer = DynamicPoolResizer(pool, minspare=10, maxspare=maxspare)
-    
+
     # We need to have grown enough threads so that we:
     #  - Have enough to satisfy as many requests in the queue
     #  - Have enough spare threads (between min and max spare).
@@ -47,6 +47,19 @@ def test_no_idle_threads_and_waiting_conns_grows_enough_respecting_max():
     assert 14 <= resizer.grow_value <= 40
     assert resizer.shrink_value == 0
 
+def test_no_idle_threads_and_waiting_conns_grows_bigger_than_maxspare():
+    maxspare = 40
+    pool = Mock(min=20, max=200, size=21, idle=0, qsize=50)
+    resizer = DynamicPoolResizer(pool, minspare=10, maxspare=maxspare)
+
+    # We need to have grown enough threads so that we:
+    #  - Have enough to satisfy as many requests in the queue
+    #  - Have enough spare threads (between min and max spare).
+    #  - We do not exceed the maximum number of threads.
+    #  - We grow more than maxspare (older versions of dynpool would
+    #    limit it to maxspare).
+    assert 60 <= resizer.grow_value <= 90
+    assert resizer.shrink_value == 0
 
 def test_less_idle_threads_than_minspare_grows():
     idle = 2
@@ -138,7 +151,7 @@ def test_user_should_set_a_max_thread_value():
     maxspare = 20
     pool = Mock(min=5, max=-1, size=lots_of_threads, idle=0, qsize=100)
     resizer = DynamicPoolResizer(pool, minspare=5, maxspare=maxspare)
-    
+
     # Despite no maximum provided, we should still grow enough threads
     # so that we meet demand - we should be functionally equivalent as
     # if the user had specified a very high max value.
