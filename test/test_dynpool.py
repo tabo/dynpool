@@ -11,28 +11,40 @@ def test_no_threads_and_no_conns_grows_minthreads():
     assert resizer.shrink_value == 0
 
 
-def test_no_threads_and_waiting_conns_grows_maxspare():
+def test_no_threads_and_waiting_conns_grows_enough():
     maxspare = 10
     pool = Mock(min=5, max=30, size=0, idle=0, qsize=4)
     resizer = DynamicPoolResizer(pool, minspare=5, maxspare=maxspare)
-    assert resizer.grow_value == maxspare
+    
+    # We need to have grown enough threads so that we:
+    #  - Have enough to satisfy as many requests in the queue
+    #  - Have enough spare threads (between min and max spare).
+    assert 9 <= resizer.grow_value <= 14
     assert resizer.shrink_value == 0
 
 
-def test_no_idle_threads_and_waiting_conns_grows_maxspare():
+def test_no_idle_threads_and_waiting_conns_grows_enough():
     maxspare = 10
     pool = Mock(min=5, max=30, size=4, idle=0, qsize=4)
     resizer = DynamicPoolResizer(pool, minspare=5, maxspare=maxspare)
-    assert resizer.grow_value == maxspare
+
+    # We need to have grown enough threads so that we:
+    #  - Have enough to satisfy as many requests in the queue
+    #  - Have enough spare threads (between min and max spare).
+    assert 9 <= resizer.grow_value <= 14
     assert resizer.shrink_value == 0
 
 
-def test_no_idle_threads_and_waiting_conns_grows_maxspare_respecting_max():
+def test_no_idle_threads_and_waiting_conns_grows_enough_respecting_max():
     maxspare = 40
     pool = Mock(min=20, max=40, size=21, idle=0, qsize=4)
     resizer = DynamicPoolResizer(pool, minspare=10, maxspare=maxspare)
-    grow_value = resizer.grow_value
-    assert grow_value == 19
+    
+    # We need to have grown enough threads so that we:
+    #  - Have enough to satisfy as many requests in the queue
+    #  - Have enough spare threads (between min and max spare).
+    #  - We do not exceed the maximum number of threads.
+    assert 14 <= resizer.grow_value <= 40
     assert resizer.shrink_value == 0
 
 
@@ -126,7 +138,11 @@ def test_user_should_set_a_max_thread_value():
     maxspare = 20
     pool = Mock(min=5, max=-1, size=lots_of_threads, idle=0, qsize=100)
     resizer = DynamicPoolResizer(pool, minspare=5, maxspare=maxspare)
-    assert resizer.grow_value == maxspare
+    
+    # Despite no maximum provided, we should still grow enough threads
+    # so that we meet demand - we should be functionally equivalent as
+    # if the user had specified a very high max value.
+    assert 105 <= resizer.grow_value <= 120
     assert resizer.shrink_value == 0
 
 
