@@ -156,18 +156,27 @@ class DynamicPoolResizer(object):
         pool_min = pool.min
         pool_max = pool.max
         pool_idle = pool.idle
+        pool_qsize = pool.qsize
         maxspare = self.maxspare
+        minspare = self.minspare
+
         if 0 < pool_max <= pool_size or pool_idle > maxspare:
             growby = 0
-        elif not pool_idle and pool.qsize:
+        elif not pool_idle and pool_qsize:
             # UH OH, we don't have available threads to continue serving the
             # queue. This means that we just received a lot of requests that we
-            # couldn't handle with our usual minspare threads value, so to
-            # avoid more problems, quickly grow the pool by the maxspare value.
-            if 0 < pool_max < pool_size + maxspare:
-                growby = pool_max - pool_size
+            # couldn't handle with our usual minspare threads value.
+            #
+            # So spawn enough threads such that we can cope with the
+            # number of waiting requests, and satisfy the minspare
+            # requirement at the same time (while adhering to the
+            # maximum number of threads).
+            if pool_max > 0:
+                growby = min(pool_qsize + minspare, pool_max - pool_size)
             else:
-                growby = maxspare
+                # If we have no maximum defined, then don't try to factor
+                # pool_max into the equation.
+                growby = pool_qsize + minspare
         else:
             growby = max(0, pool_min - pool_size, self.minspare - pool_idle)
         return growby
