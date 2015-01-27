@@ -100,20 +100,27 @@ class DynamicPoolResizer(object):
     :param pool: Pool object that follows the expected interface.
     :param minspare: Minimum number of idle resources available.
     :param maxspare: Maximum number of idle resources available.
-    :param shrinkfreq: Minimum seconds between shrink operations.
+    :param shrinkfreq: Minimum seconds between shrink operations. Set to 0
+                       to disable shrink checks.
+    :param logfreq: Minimum seconds between status logging. Set to 0 to disable
+                    status logging (which is the default).
     :param logger: Callback that will act as a logger. There is no
                    logging by default
     :param mutex: Mutex used in :py:meth:`run()`.
                   A `threading.Lock()` object will be used by default.
+
+    You can set the frequency values to 0 to disable them.
     """
-    def __init__(self, pool, minspare, maxspare, shrinkfreq=5,
+    def __init__(self, pool, minspare, maxspare, shrinkfreq=5, logfreq=0,
                  logger=None, mutex=None):
         self.pool = pool
         self.minspare = minspare
         self.maxspare = maxspare
         self.shrinkfreq = shrinkfreq
+        self.logfreq = logfreq
         self.log = logger or (lambda msg: None)
         self.lastshrink = None
+        self.lastlog = None
         self._mutex = mutex or threading.Lock()
 
     def run(self):
@@ -129,12 +136,18 @@ class DynamicPoolResizer(object):
                 shrink_value = self.shrink_value
                 if shrink_value:
                     self.shrink(shrink_value)
+            if self.can_log():
+                self.queue_log()
+                self.lastlog = time.time()
 
-    def action_log(self, action, amount):
+    def queue_log(self, msg=''):
         pool = self.pool
         self.log(
-            'Thread pool: [current={0}/idle={1}/queue={2}] {3} by {4}'.format(
-                pool.size, pool.idle, pool.qsize, action, amount))
+            'Thread pool: [current={0}/idle={1}/queue={2}]{3}'.format(
+                pool.size, pool.idle, pool.qsize, msg))
+
+    def action_log(self, action, amount):
+        self.queue_log(' {0} by {1}'.format(action, amount))
 
     @property
     def grow_value(self):
@@ -164,8 +177,22 @@ class DynamicPoolResizer(object):
         self.pool.grow(growby)
 
     def can_shrink(self):
-        last = self.lastshrink
-        return not last or time.time() - last > self.shrinkfreq
+        return (
+            self.shrinkfreq and
+            (
+                not self.lastshrink
+                or time.time() - self.lastshrink > self.shrinkfreq
+            )
+        )
+
+    def can_log(self):
+        return (
+            self.logfreq > 0 and
+            (
+                not self.lastlog
+                or time.time() - self.lastlog > self.logfreq
+            )
+        )
 
     @property
     def shrink_value(self):
