@@ -87,7 +87,7 @@ PyPy 2.2. Other versions may work but are not supported.
 
 """
 
-__version__ = '2.0'
+__version__ = '2.1'
 
 import math
 import threading
