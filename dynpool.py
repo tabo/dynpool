@@ -92,6 +92,40 @@ __version__ = '2.1'
 import math
 import threading
 import time
+import functools
+
+
+def non_repeating(method):
+    """
+    Decorate a function such that it's behavior is only invoked
+    when the parameters differ from the last call. This
+    function could be implemented with jaraco.functools
+    and backports.functools_lru_cache as so:
+
+    cache = functools.partial(lru_cache, maxsize=1)
+    non_repeating = functools.partial(method_cache, cache_wrapper=cache)
+
+    >>> x = []
+    >>> @non_repeating
+    ... def add_item(self, val):
+    ...     x.append(val)
+    >>> add_item(None, 1)
+    >>> add_item(None, 2)
+    >>> add_item(None, 2)
+    >>> add_item(None, 3)
+    >>> add_item(None, 2)
+    >>> x
+    [1, 2, 3, 2]
+    """
+    last = []
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        params = [args, kwargs]
+        if last == params:
+            return
+        last[:] = params
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class DynamicPoolResizer(object):
@@ -142,9 +176,17 @@ class DynamicPoolResizer(object):
 
     def queue_log(self, msg=''):
         pool = self.pool
+        self._log_if_new(pool.size, pool.idle, pool.qsize, msg)
+
+    @non_repeating
+    def _log_if_new(self, pool_size, pool_idle, pool_qsize, msg):
+        """
+        Log the message, but as the result is cached, if the parameters
+        are the same as the last call, the behavior is bypassed.
+        """
         self.log(
             'Thread pool: [current={0}/idle={1}/queue={2}]{3}'.format(
-                pool.size, pool.idle, pool.qsize, msg))
+                pool_size, pool_idle, pool_qsize, msg))
 
     def action_log(self, action, amount):
         self.queue_log(' {0} by {1}'.format(action, amount))
