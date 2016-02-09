@@ -25,7 +25,7 @@ class pytest_test(test):
 
 setup_args = dict(
     name='dynpool',
-    version='1.0.5',
+    version='2.1',
     url='https://tabo.pe/projects/dynpool/',
     author='Gustavo Picon',
     author_email='tabo@tabo.pe',
